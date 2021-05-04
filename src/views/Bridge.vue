@@ -310,7 +310,7 @@ export default class Bridge extends Mixins(
   }
 
   get isInsufficientEthereumForFee (): boolean {
-    return hasInsufficientEthForFee(this.ethBalance, this.ethereumNetworkFee)
+    return hasInsufficientEthForFee(this.evmBalance, this.ethereumNetworkFee)
   }
 
   get isInsufficientBalance (): boolean {
@@ -384,7 +384,7 @@ export default class Bridge extends Mixins(
     await this.setEvmNetwork(api.bridge.externalNetwork || this.subNetworks[0]?.id)
     await this.setNetworkType()
     await this.syncExternalAccountWithAppState()
-    this.getEthBalance()
+    this.getEvmBalance()
     this.resetBridgeForm(!!router.currentRoute.params?.address)
     this.withApi(async () => {
       this.unwatchEthereum = await web3Util.watchEthereum({
@@ -419,7 +419,7 @@ export default class Bridge extends Mixins(
   }
 
   updateExternalBalances (): void {
-    this.getEthBalance()
+    this.getEvmBalance()
     this.updateRegisteredAssets()
   }
 

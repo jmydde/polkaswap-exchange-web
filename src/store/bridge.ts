@@ -541,7 +541,7 @@ const actions = {
     }
     commit(types.SIGN_SORA_TRANSACTION_SORA_ETH_REQUEST)
     try {
-      const ethAccount = rootGetters['web3/ethAddress']
+      const ethAccount = rootGetters['web3/evmAddress']
       await api.bridge.transferToEth(asset, ethAccount, getters.amount, txId)
       commit(types.SIGN_SORA_TRANSACTION_SORA_ETH_SUCCESS)
     } catch (error) {
@@ -569,7 +569,7 @@ const actions = {
         throw new Error('Change evm network in Metamask')
       }
       const symbol = getters.asset.symbol
-      const ethAccount = rootGetters['web3/ethAddress']
+      const ethAccount = rootGetters['web3/evmAddress']
       const isValOrXor = [KnownBridgeAsset.XOR, KnownBridgeAsset.VAL].includes(symbol)
       const contract = isValOrXor
         ? rootGetters[`web3/contract${symbol}`]
@@ -658,7 +658,7 @@ const actions = {
         throw new Error('Change evm network in Metamask')
       }
       const contract = rootGetters[`web3/contract${KnownBridgeAsset.Other}`]
-      const ethAccount = rootGetters['web3/ethAddress']
+      const ethAccount = rootGetters['web3/evmAddress']
       const isExternalAccountConnected = await web3Util.checkAccountIsConnected(ethAccount)
       if (!isExternalAccountConnected) {
         await dispatch('web3/disconnectExternalAccount', {}, { root: true })
@@ -670,7 +670,7 @@ const actions = {
 
       // don't check allowance for ETH
       if (!isETHSend) {
-        const allowance = await dispatch('web3/getAllowanceByEthAddress', { address: asset.externalAddress }, { root: true })
+        const allowance = await dispatch('web3/getAllowanceByEvmAddress', { address: asset.externalAddress }, { root: true })
         if (FPNumber.lte(new FPNumber(allowance), new FPNumber(getters.amount))) {
           const tokenInstance = new web3.eth.Contract(contract[OtherContractType.ERC20].abi)
           tokenInstance.options.address = asset.externalAddress

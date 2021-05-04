@@ -185,7 +185,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
   @Getter('asset', { namespace }) asset!: AccountAsset | RegisteredAccountAsset | null
   @Getter('tokenXOR', { namespace: 'assets' }) tokenXOR!: any
   @Getter('amount', { namespace }) amount!: string
-  @Getter('ethBalance', { namespace: 'web3' }) ethBalance!: CodecString
+  @Getter('evmBalance', { namespace: 'web3' }) evmBalance!: CodecString
   @Getter('soraNetworkFee', { namespace }) soraNetworkFee!: CodecString
   @Getter('ethereumNetworkFee', { namespace }) ethereumNetworkFee!: CodecString
   @Getter('isTransactionConfirmed', { namespace }) isTransactionConfirmed!: boolean
@@ -409,7 +409,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
   }
 
   get isInsufficientEthereumForFee (): boolean {
-    return hasInsufficientEthForFee(this.ethBalance, this.historyItem?.ethereumNetworkFee ?? this.ethereumNetworkFee)
+    return hasInsufficientEthForFee(this.evmBalance, this.historyItem?.ethereumNetworkFee ?? this.ethereumNetworkFee)
   }
 
   handleOpenEtherscan (): void {

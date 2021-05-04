@@ -75,6 +75,11 @@ export enum KnownBridgeAsset {
   Other = 'OTHER'
 }
 
+export enum ContractNetwork {
+  Ethereum = 'ethereum',
+  Other = 'other'
+}
+
 export enum Contract {
   Internal = 'internal',
   Other = 'other'
@@ -233,15 +238,15 @@ async function watchEthereum (cb: {
 }
 
 function storeEthUserAddress (address: string): void {
-  storage.set('ethAddress', address)
+  storage.set('evmAddress', address)
 }
 
-function getEthUserAddress (): string {
-  return storage.get('ethAddress') || ''
+function getEvmUserAddress (): string {
+  return storage.get('evmAddress') || ''
 }
 
 function removeEthUserAddress (): void {
-  storage.remove('ethAddress')
+  storage.remove('evmAddress')
 }
 
 function storeNetworkType (network: string): void {
@@ -265,9 +270,9 @@ async function getNetworkType (): Promise<string> {
   return networkType
 }
 
-async function readSmartContract (contract: Contract, name: string): Promise<JsonContract | undefined> {
+async function readSmartContract (network: ContractNetwork, name: string): Promise<JsonContract | undefined> {
   try {
-    const { data } = await axios.get(`/abi/${contract}/${name}`)
+    const { data } = await axios.get(`/abi/${network}/${name}`)
     return data
   } catch (error) {
     console.error(error)
