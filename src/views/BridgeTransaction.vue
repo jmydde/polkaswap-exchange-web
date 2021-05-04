@@ -110,7 +110,7 @@
               </s-dropdown>
             </div>
             <info-line :class="failedClass(true)" :label="t('bridgeTransaction.networkInfo.status')" :value="statusTo" />
-            <info-line :label="t('bridgeTransaction.networkInfo.date')" :value="transactionDate(!isSoraToEvm ? soraTransactionDate : ethereumTransactionDate)" />
+            <info-line :label="t('bridgeTransaction.networkInfo.date')" :value="transactionDate(!isSoraToEvm ? soraTransactionDate : evmTransactionDate)" />
             <info-line
               v-if="amount"
               :label="t('bridgeTransaction.networkInfo.amount')"
@@ -168,7 +168,7 @@ import NumberFormatterMixin from '@/components/mixins/NumberFormatterMixin'
 import router, { lazyComponent } from '@/router'
 import { Components, PageNames, EthSymbol, MetamaskCancellationCode } from '@/consts'
 import { formatAssetSymbol, copyToClipboard, formatDateItem, hasInsufficientBalance, hasInsufficientXorForFee, hasInsufficientEthForFee } from '@/utils'
-import { createFSM, EVENTS, SORA_ETHEREUM_STATES, ETHEREUM_SORA_STATES, STATES } from '@/utils/fsm'
+import { createFSM, EVENTS, SORA_EVM_STATES, EVM_SORA_STATES, STATES } from '@/utils/fsm'
 
 const namespace = 'bridge'
 
@@ -187,40 +187,40 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
   @Getter('amount', { namespace }) amount!: string
   @Getter('evmBalance', { namespace: 'web3' }) evmBalance!: CodecString
   @Getter('soraNetworkFee', { namespace }) soraNetworkFee!: CodecString
-  @Getter('ethereumNetworkFee', { namespace }) ethereumNetworkFee!: CodecString
+  @Getter('evmNetworkFee', { namespace }) evmNetworkFee!: CodecString
   @Getter('isTransactionConfirmed', { namespace }) isTransactionConfirmed!: boolean
   @Getter('soraTransactionHash', { namespace }) soraTransactionHash!: string
-  @Getter('ethereumTransactionHash', { namespace }) ethereumTransactionHash!: string
+  @Getter('evmTransactionHash', { namespace }) evmTransactionHash!: string
   @Getter('soraTransactionDate', { namespace }) soraTransactionDate!: string
-  @Getter('ethereumTransactionDate', { namespace }) ethereumTransactionDate!: string
+  @Getter('evmTransactionDate', { namespace }) evmTransactionDate!: string
   @Getter('currentTransactionState', { namespace }) currentTransactionState!: STATES
   @Getter('initialTransactionState', { namespace }) initialTransactionState!: STATES
   @Getter('transactionStep', { namespace }) transactionStep!: number
   @Getter('historyItem', { namespace }) historyItem!: any
 
   @Action('getNetworkFee', { namespace }) getNetworkFee
-  @Action('getEthNetworkFee', { namespace }) getEthNetworkFee
+  @Action('getEvmNetworkFee', { namespace }) getEvmNetworkFee
   @Action('setCurrentTransactionState', { namespace }) setCurrentTransactionState
   @Action('setInitialTransactionState', { namespace }) setInitialTransactionState
   @Action('setTransactionStep', { namespace }) setTransactionStep
   @Action('setTransactionConfirm', { namespace }) setTransactionConfirm
   @Action('setHistoryItem', { namespace }) setHistoryItem
 
-  @Action('signSoraTransactionSoraToEth', { namespace }) signSoraTransactionSoraToEth
-  @Action('signEthTransactionSoraToEth', { namespace }) signEthTransactionSoraToEth
-  @Action('sendSoraTransactionSoraToEth', { namespace }) sendSoraTransactionSoraToEth
-  @Action('sendEthTransactionSoraToEth', { namespace }) sendEthTransactionSoraToEth
+  @Action('signSoraTransactionSoraToEvm', { namespace }) signSoraTransactionSoraToEvm
+  @Action('signEvmTransactionSoraToEvm', { namespace }) signEvmTransactionSoraToEvm
+  @Action('sendSoraTransactionSoraToEvm', { namespace }) sendSoraTransactionSoraToEvm
+  @Action('sendEvmTransactionSoraToEvm', { namespace }) sendEvmTransactionSoraToEvm
 
-  @Action('signSoraTransactionEthToSora', { namespace }) signSoraTransactionEthToSora
-  @Action('signEthTransactionEthToSora', { namespace }) signEthTransactionEthToSora
-  @Action('sendSoraTransactionEthToSora', { namespace }) sendSoraTransactionEthToSora
-  @Action('sendEthTransactionEthToSora', { namespace }) sendEthTransactionEthToSora
+  @Action('signSoraTransactionEvmToSora', { namespace }) signSoraTransactionEvmToSora
+  @Action('signEvmTransactionEvmToSora', { namespace }) signEvmTransactionEvmToSora
+  @Action('sendSoraTransactionEvmToSora', { namespace }) sendSoraTransactionEvmToSora
+  @Action('sendEvmTransactionEvmToSora', { namespace }) sendEvmTransactionEvmToSora
 
   @Action('generateHistoryItem', { namespace }) generateHistoryItem!: ({ date: Date }) => Promise<BridgeHistory>
   @Action('updateHistoryParams', { namespace }) updateHistoryParams
   @Action('removeHistoryById', { namespace }) removeHistoryById
   @Action('setSoraTransactionHash', { namespace }) setSoraTransactionHash
-  @Action('setEthereumTransactionHash', { namespace }) setEthereumTransactionHash
+  @Action('setEvmTransactionHash', { namespace }) setEvmTransactionHash
 
   @Prop({ type: Boolean, default: false }) readonly parentLoading!: boolean
 
@@ -265,19 +265,19 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
   }
 
   get isTransactionFromPending (): boolean {
-    return this.currentState === (this.isSoraToEvm ? STATES.SORA_PENDING : STATES.ETHEREUM_PENDING)
+    return this.currentState === (this.isSoraToEvm ? STATES.SORA_PENDING : STATES.EVM_PENDING)
   }
 
   get isTransactionToPending (): boolean {
-    return this.currentState === (!this.isSoraToEvm ? STATES.SORA_PENDING : STATES.ETHEREUM_PENDING)
+    return this.currentState === (!this.isSoraToEvm ? STATES.SORA_PENDING : STATES.EVM_PENDING)
   }
 
   get isTransactionFromFailed (): boolean {
-    return this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED)
+    return this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED)
   }
 
   get isTransactionToFailed (): boolean {
-    return this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED)
+    return this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED)
   }
 
   get isTransactionFromCompleted (): boolean {
@@ -285,7 +285,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
   }
 
   get isTransferCompleted (): boolean {
-    const isTransactionCompleted = this.currentState === (!this.isSoraToEvm ? STATES.SORA_COMMITED : STATES.ETHEREUM_COMMITED)
+    const isTransactionCompleted = this.currentState === (!this.isSoraToEvm ? STATES.SORA_COMMITED : STATES.EVM_COMMITED)
     if (isTransactionCompleted) {
       this.activeTransactionStep = null
     }
@@ -338,10 +338,10 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
       return this.t('bridgeTransaction.statuses.waiting') + '...'
     }
     if (this.isTransactionStep1) {
-      if (this.currentState === (this.isSoraToEvm ? STATES.SORA_PENDING : STATES.ETHEREUM_PENDING)) {
+      if (this.currentState === (this.isSoraToEvm ? STATES.SORA_PENDING : STATES.EVM_PENDING)) {
         return this.t('bridgeTransaction.statuses.pending') + '...'
       }
-      if (this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED)) {
+      if (this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED)) {
         return this.t('bridgeTransaction.statuses.failed')
       }
     }
@@ -352,14 +352,14 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
     if (!this.currentState || !this.isTransactionFromCompleted) {
       return this.t('bridgeTransaction.statuses.waiting') + '...'
     }
-    if (this.currentState === (!this.isSoraToEthereum ? STATES.SORA_PENDING : STATES.ETHEREUM_PENDING)) {
+    if (this.currentState === (!this.isSoraToEvm ? STATES.SORA_PENDING : STATES.EVM_PENDING)) {
       const message = this.t('bridgeTransaction.statuses.pending') + '...'
-      if (this.isSoraToEthereum) {
+      if (this.isSoraToEvm) {
         return message
       }
       return `${message} (${this.t('bridgeTransaction.wait30Block')})`
     }
-    if (this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED)) {
+    if (this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED)) {
       return this.t('bridgeTransaction.statuses.failed')
     }
     if (this.isTransferCompleted) {
@@ -372,18 +372,18 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
     if (this.isSoraToEvm) {
       return this.soraTransactionHash
     }
-    return this.ethereumTransactionHash
+    return this.evmTransactionHash
   }
 
   get transactionToHash (): string {
     if (!this.isSoraToEvm) {
       return this.soraTransactionHash
     }
-    return this.ethereumTransactionHash
+    return this.evmTransactionHash
   }
 
   get transactionFromDate (): string {
-    return this.transactionDate(this.isSoraToEvm ? this.soraTransactionDate : this.ethereumTransactionDate)
+    return this.transactionDate(this.isSoraToEvm ? this.soraTransactionDate : this.evmTransactionDate)
   }
 
   get formattedSoraNetworkFee (): string {
@@ -391,13 +391,13 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
   }
 
   get formattedEthNetworkFee (): string {
-    return this.formatCodecNumber(this.historyItem?.ethereumNetworkFee ?? this.ethereumNetworkFee)
+    return this.formatCodecNumber(this.historyItem?.ethereumNetworkFee ?? this.evmNetworkFee)
   }
 
   get isInsufficientBalance (): boolean {
-    const fee = this.isSoraToEthereum
+    const fee = this.isSoraToEvm
       ? this.historyItem?.soraNetworkFee ?? this.soraNetworkFee
-      : this.historyItem?.ethereumNetworkFee ?? this.ethereumNetworkFee
+      : this.historyItem?.ethereumNetworkFee ?? this.evmNetworkFee
 
     if (!this.asset || !this.amount || !fee) return false
 
@@ -409,7 +409,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
   }
 
   get isInsufficientEthereumForFee (): boolean {
-    return hasInsufficientEthForFee(this.evmBalance, this.historyItem?.ethereumNetworkFee ?? this.ethereumNetworkFee)
+    return hasInsufficientEthForFee(this.evmBalance, this.historyItem?.ethereumNetworkFee ?? this.evmNetworkFee)
   }
 
   handleOpenEtherscan (): void {
@@ -434,7 +434,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
     }
     if (!this.historyItem) {
       await this.getNetworkFee()
-      await this.getEthNetworkFee()
+      await this.getEvmNetworkFee()
     }
     this.initializeTransactionStateMachine()
     this.isInitRequestCompleted = true
@@ -456,7 +456,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
     const historyItem = this.historyItem
       ? this.historyItem
       : await this.generateHistoryItem({ date: Date.now() })
-    const machineStates = this.isSoraToEvm ? SORA_ETHEREUM_STATES : ETHEREUM_SORA_STATES
+    const machineStates = this.isSoraToEvm ? SORA_EVM_STATES : EVM_SORA_STATES
     const initialState = this.initialTransactionState === this.currentTransactionState
       ? this.initialTransactionState
       : this.currentTransactionState
@@ -466,22 +466,22 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
           history: historyItem,
           SORA_ETH: {
             sora: {
-              sign: this.signSoraTransactionSoraToEth,
-              send: this.sendSoraTransactionSoraToEth
+              sign: this.signSoraTransactionSoraToEvm,
+              send: this.sendSoraTransactionSoraToEvm
             },
-            ethereum: {
-              sign: this.signEthTransactionSoraToEth,
-              send: this.sendEthTransactionSoraToEth
+            evm: {
+              sign: this.signEvmTransactionSoraToEvm,
+              send: this.sendEvmTransactionSoraToEvm
             }
           },
-          ETH_SORA: {
+          EVM_SORA: {
             sora: {
-              sign: this.signSoraTransactionEthToSora,
-              send: this.sendSoraTransactionEthToSora
+              sign: this.signSoraTransactionEvmToSora,
+              send: this.sendSoraTransactionEvmToSora
             },
-            ethereum: {
-              sign: this.signEthTransactionEthToSora,
-              send: this.sendEthTransactionEthToSora
+            evm: {
+              sign: this.signEvmTransactionEvmToSora,
+              send: this.sendEvmTransactionEvmToSora
             }
           }
         },
@@ -490,12 +490,12 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
       )
     )
 
-    this.callFirstTransition = () => machineStates === SORA_ETHEREUM_STATES
+    this.callFirstTransition = () => machineStates === SORA_EVM_STATES
       ? this.sendService.send(EVENTS.SEND_SORA)
-      : this.sendService.send(EVENTS.SEND_ETHEREUM)
+      : this.sendService.send(EVENTS.SEND_EVM)
 
-    this.callSecondTransition = () => machineStates === SORA_ETHEREUM_STATES
-      ? this.sendService.send(EVENTS.SEND_ETHEREUM)
+    this.callSecondTransition = () => machineStates === SORA_EVM_STATES
+      ? this.sendService.send(EVENTS.SEND_EVM)
       : this.sendService.send(EVENTS.SEND_SORA)
 
     this.callRetryTransition = () => this.sendService.send(EVENTS.RETRY)
@@ -509,7 +509,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
         if (
           !state.context.history.hash?.length &&
           !state.context.history.ethereumHash?.length &&
-          [STATES.SORA_REJECTED, STATES.ETHEREUM_REJECTED].includes(state.value)
+          [STATES.SORA_REJECTED, STATES.EVM_REJECTED].includes(state.value)
         ) {
           if (
             state.event.data.message.includes('Cancelled') ||
@@ -522,13 +522,13 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
         if (state.context.history.hash && !this.soraTransactionHash.length) {
           await this.setSoraTransactionHash(state.context.history.hash)
         }
-        if (state.context.history.ethereumHash && !this.ethereumTransactionHash.length) {
-          await this.setEthereumTransactionHash(state.context.history.ethereumHash)
+        if (state.context.history.ethereumHash && !this.evmTransactionHash.length) {
+          await this.setEvmTransactionHash(state.context.history.ethereumHash)
         }
 
         if (
-          (machineStates === SORA_ETHEREUM_STATES && state.value === STATES.SORA_COMMITED) ||
-          (machineStates === ETHEREUM_SORA_STATES && state.value === STATES.ETHEREUM_COMMITED)
+          (machineStates === SORA_EVM_STATES && state.value === STATES.SORA_COMMITED) ||
+          (machineStates === EVM_SORA_STATES && state.value === STATES.EVM_COMMITED)
         ) {
           await this.setFromTransactionCompleted()
           this.callSecondTransition()
@@ -547,7 +547,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
     const iconClass = 'network-info-icon'
     const classes = [iconClass]
     if (isSecondTransaction) {
-      if (this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED)) {
+      if (this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED)) {
         classes.push(`${iconClass}--error`)
         return classes.join(' ')
       }
@@ -556,7 +556,7 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
         return classes.join(' ')
       }
     } else {
-      if (this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED)) {
+      if (this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED)) {
         classes.push(`${iconClass}--error`)
         return classes.join(' ')
       }
@@ -598,9 +598,9 @@ export default class BridgeTransaction extends Mixins(WalletConnectMixin, Loadin
 
   failedClass (isSecondTransaction: boolean): string {
     if (!isSecondTransaction) {
-      return this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED) ? 'info-line--error' : ''
+      return this.currentState === (this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED) ? 'info-line--error' : ''
     }
-    return this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.ETHEREUM_REJECTED) ? 'info-line--error' : ''
+    return this.currentState === (!this.isSoraToEvm ? STATES.SORA_REJECTED : STATES.EVM_REJECTED) ? 'info-line--error' : ''
   }
 
   transactionDate (transactionDate: string): string {

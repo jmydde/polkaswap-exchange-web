@@ -209,7 +209,7 @@ export default class App extends Mixins(TransactionMixin, LoadingMixin) {
   @Action setFaucetUrl
   @Action getNetworkChainGenesisHash
   @Action('getAssets', { namespace: 'assets' }) getAssets
-  @Action('setEthereumSmartContracts', { namespace: 'web3' }) setEthereumSmartContracts
+  @Action('setEvmSmartContracts', { namespace: 'web3' }) setEvmSmartContracts
   @Action('setSubNetworks', { namespace: 'web3' }) setSubNetworks
 
   async created () {
@@ -219,7 +219,7 @@ export default class App extends Mixins(TransactionMixin, LoadingMixin) {
       await this.setSoraNetwork(data)
       await this.setDefaultNodes(data?.DEFAULT_NETWORKS)
       await this.setSubNetworks(data.SUB_NETWORKS)
-      await this.setEthereumSmartContracts(data.BRIDGE)
+      await this.setEvmSmartContracts(data.BRIDGE)
 
       if (data.FAUCET_URL) {
         this.setFaucetUrl(data.FAUCET_URL)

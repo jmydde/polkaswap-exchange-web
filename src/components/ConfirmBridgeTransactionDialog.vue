@@ -29,7 +29,7 @@
     />
     <info-line
       :label="t('bridge.ethereumNetworkFee')"
-      :value="formatFee(ethereumNetworkFee, formattedEthNetworkFee)"
+      :value="formatFee(evmNetworkFee, formattedEvmNetworkFee)"
       :asset-symbol="EthSymbol"
     />
     <!-- TODO: We don't need this block right now. How we should calculate the total? What for a case with not XOR asset (We can't just add it to soraNetworkFee as usual)? -->
@@ -83,7 +83,7 @@ export default class ConfirmBridgeTransactionDialog extends Mixins(TranslationMi
   @Getter('asset', { namespace }) asset!: any
   @Getter('amount', { namespace }) amount!: string
   @Getter('soraNetworkFee', { namespace }) soraNetworkFee!: CodecString
-  @Getter('ethereumNetworkFee', { namespace }) ethereumNetworkFee!: CodecString
+  @Getter('evmNetworkFee', { namespace }) evmNetworkFee!: CodecString
   @Action('setTransactionConfirm', { namespace }) setTransactionConfirm
   @Action('setTransactionStep', { namespace }) setTransactionStep
 
@@ -114,8 +114,8 @@ export default class ConfirmBridgeTransactionDialog extends Mixins(TranslationMi
     return this.formatCodecNumber(this.soraNetworkFee)
   }
 
-  get formattedEthNetworkFee (): string {
-    return this.formatCodecNumber(this.ethereumNetworkFee)
+  get formattedEvmNetworkFee (): string {
+    return this.formatCodecNumber(this.evmNetworkFee)
   }
 
   formatFee (fee: string, formattedFee: string): string {
