@@ -572,11 +572,18 @@ const actions = {
       const symbol = getters.asset.symbol
       const evmAccount = rootGetters['web3/evmAddress']
       const isValOrXor = [KnownBridgeAsset.XOR, KnownBridgeAsset.VAL].includes(symbol)
-      const contract = isValOrXor
-        ? rootGetters[`web3/contract${symbol}`]
-        : rootGetters[`web3/contract${KnownBridgeAsset.Other}`][OtherContractType.Bridge]
+      const bridgeAsset: KnownBridgeAsset = isValOrXor ? symbol : KnownBridgeAsset.Other
+      const contractMap = {
+        [KnownBridgeAsset.XOR]: rootGetters['web3/contractAbi'](KnownBridgeAsset.XOR),
+        [KnownBridgeAsset.VAL]: rootGetters['web3/contractAbi'](KnownBridgeAsset.VAL),
+        [KnownBridgeAsset.Other]: rootGetters['web3/contractAbi'](KnownBridgeAsset.Other)
+      }
+      const contract = contractMap[bridgeAsset]
+      // const contract = isValOrXor
+      //   ? rootGetters[`web3/contract${symbol}`]
+      //   : rootGetters[`web3/contract${KnownBridgeAsset.Other}`][OtherContractType.Bridge]
       const contractInstance = new web3.eth.Contract(contract.abi)
-      const contractAddress = rootGetters[`web3/address${isValOrXor ? symbol : KnownBridgeAsset.Other}`]
+      const contractAddress = rootGetters['web3/contractAddress'](bridgeAsset)
       contractInstance.options.address = contractAddress.MASTER
       const method = isValOrXor
         ? 'mintTokensByPeers'
@@ -620,7 +627,7 @@ const actions = {
       throw error
     }
   },
-  async sendSoraTransactionSoraToEvm ({ commit, getters, rootGetters, dispatch }, { txId }) {
+  async sendSoraTransactionSoraToEvm ({ commit }, { txId }) {
     if (!txId) throw new Error('TX ID cannot be empty!')
     commit(types.SEND_SORA_TRANSACTION_SORA_EVM_REQUEST)
     try {
@@ -632,7 +639,7 @@ const actions = {
       throw error
     }
   },
-  async sendEvmTransactionSoraToEvm ({ commit, getters, rootGetters, dispatch }, { evmHash }) {
+  async sendEvmTransactionSoraToEvm ({ commit }, { evmHash }) {
     if (!evmHash) throw new Error('Hash cannot be empty!')
     commit(types.SEND_EVM_TRANSACTION_SORA_EVM_REQUEST)
     try {
@@ -658,7 +665,7 @@ const actions = {
       if (!rootGetters['web3/isValidNetworkType']) {
         throw new Error('Change evm network in Metamask')
       }
-      const contract = rootGetters[`web3/contract${KnownBridgeAsset.Other}`]
+      const contract = rootGetters['web3/contractAbi'](KnownBridgeAsset.Other)
       const evmAccount = rootGetters['web3/evmAddress']
       const isExternalAccountConnected = await web3Util.checkAccountIsConnected(evmAccount)
       if (!isExternalAccountConnected) {
@@ -666,7 +673,7 @@ const actions = {
         throw new Error('Connect account in Metamask')
       }
       const web3 = await web3Util.getInstance()
-      const contractAddress = rootGetters[`web3/address${KnownBridgeAsset.Other}`]
+      const contractAddress = rootGetters['web3/contractAddress'](KnownBridgeAsset.Other)
       const isETHSend = isEthereumAddress(asset.externalAddress)
 
       // don't check allowance for ETH
@@ -728,7 +735,7 @@ const actions = {
       throw error
     }
   },
-  async sendEvmTransactionEvmToSora ({ commit, getters, rootGetters, dispatch }, { evmHash }) {
+  async sendEvmTransactionEvmToSora ({ commit }, { evmHash }) {
     if (!evmHash) throw new Error('Hash cannot be empty!')
     commit(types.SEND_EVM_TRANSACTION_SORA_EVM_REQUEST)
     try {
@@ -739,7 +746,7 @@ const actions = {
       throw error
     }
   },
-  async signSoraTransactionEvmToSora ({ commit, getters, rootGetters, dispatch }, { evmHash }) {
+  async signSoraTransactionEvmToSora ({ commit, getters, dispatch }, { evmHash }) {
     if (!evmHash) throw new Error('Hash cannot be empty!')
     if (!getters.asset || !getters.asset.address || !getters.amount || getters.isSoraToEvm) {
       return
@@ -762,7 +769,7 @@ const actions = {
       throw error
     }
   },
-  async sendSoraTransactionEvmToSora ({ commit, getters, rootGetters, dispatch }, { evmHash }) {
+  async sendSoraTransactionEvmToSora ({ commit }, { evmHash }) {
     if (!evmHash) throw new Error('Hash cannot be empty!')
     commit(types.SEND_SORA_TRANSACTION_EVM_SORA_REQUEST)
     try {
