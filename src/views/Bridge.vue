@@ -188,7 +188,6 @@
 import { Component, Mixins, Prop } from 'vue-property-decorator'
 import { Action, Getter } from 'vuex-class'
 import { RegisteredAccountAsset, KnownSymbols, FPNumber, CodecString } from '@sora-substrate/util'
-import { api } from '@soramitsu/soraneo-wallet-web'
 
 import WalletConnectMixin from '@/components/mixins/WalletConnectMixin'
 import NetworkFormatterMixin from '@/components/mixins/NetworkFormatterMixin'
@@ -210,6 +209,7 @@ import {
   asZeroValue,
   isEthereumAddress
 } from '@/utils'
+import { bridgeApi } from '@/utils/bridge'
 
 const namespace = 'bridge'
 
@@ -238,7 +238,7 @@ export default class Bridge extends Mixins(
   @Action('setAmount', { namespace }) setAmount
   @Action('resetBridgeForm', { namespace }) resetBridgeForm
   @Action('getNetworkFee', { namespace }) getNetworkFee
-  @Action('getEthNetworkFee', { namespace }) getEthNetworkFee
+  @Action('getEvmNetworkFee', { namespace }) getEvmNetworkFee
   @Action('getRegisteredAssets', { namespace: 'assets' }) getRegisteredAssets
   @Action('updateRegisteredAssets', { namespace: 'assets' }) updateRegisteredAssets
 
@@ -381,7 +381,7 @@ export default class Bridge extends Mixins(
   }
 
   async mounted (): Promise<void> {
-    await this.setEvmNetwork(api.bridge.externalNetwork || this.subNetworks[0]?.id)
+    await this.setEvmNetwork(bridgeApi.externalNetwork || this.subNetworks[0]?.id)
     await this.setNetworkType()
     await this.syncExternalAccountWithAppState()
     this.getEvmBalance()
@@ -398,7 +398,7 @@ export default class Bridge extends Mixins(
         },
         onNetworkChange: (networkId: string) => {
           this.setNetworkType(networkId)
-          this.getEthNetworkFee()
+          this.getEvmNetworkFee()
           this.getRegisteredAssets()
           this.updateExternalBalances()
         },
@@ -521,7 +521,7 @@ export default class Bridge extends Mixins(
   private getNetworkFees (): void {
     if (this.isRegisteredAsset) {
       this.getNetworkFee()
-      this.getEthNetworkFee()
+      this.getEvmNetworkFee()
     }
   }
 }
