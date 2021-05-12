@@ -407,6 +407,7 @@ const actions = {
       throw error
     }
   },
+  // TODO: Need to restore transactions for all networks
   async getRestoredHistory ({ commit, getters, rootGetters }) {
     commit(types.GET_RESTORED_HISTORY_REQUEST)
     try {
@@ -442,7 +443,7 @@ const actions = {
             transactionStep: 2,
             hash: transaction.hash,
             ethereumHash: ethLogData ? ethLogData.ethHash : '',
-            transactionState: ethLogData ? STATES.ETHEREUM_COMMITED : STATES.ETHEREUM_REJECTED
+            transactionState: ethLogData ? STATES.EVM_COMMITED : STATES.EVM_REJECTED
           })
         }
       })
