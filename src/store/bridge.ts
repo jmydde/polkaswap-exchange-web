@@ -412,12 +412,12 @@ const actions = {
     commit(types.GET_RESTORED_HISTORY_REQUEST)
     try {
       api.restored = true
-      const hashes = await api.bridge.getAccountRequests()
+      const hashes = await bridgeApi.getAccountRequests()
       if (!hashes?.length) {
         commit(types.GET_RESTORED_HISTORY_SUCCESS)
         return
       }
-      const transactions = await api.bridge.getRequests(hashes)
+      const transactions = await bridgeApi.getRequests(hashes)
       if (!transactions?.length) {
         commit(types.GET_RESTORED_HISTORY_SUCCESS)
         return
@@ -430,7 +430,7 @@ const actions = {
           const direction = transaction.direction === BridgeDirection.Outgoing ? Operation.EthBridgeOutgoing : Operation.EthBridgeIncoming
           const ethLogData = ethLogs.find(logData => logData.soraHash === transaction.hash)
           const time = Date.now()
-          api.bridge.generateHistoryItem({
+          bridgeApi.generateHistoryItem({
             type: direction,
             from: transaction.from,
             amount: transaction.amount,
@@ -443,7 +443,8 @@ const actions = {
             transactionStep: 2,
             hash: transaction.hash,
             ethereumHash: ethLogData ? ethLogData.ethHash : '',
-            transactionState: ethLogData ? STATES.EVM_COMMITED : STATES.EVM_REJECTED
+            transactionState: ethLogData ? STATES.EVM_COMMITED : STATES.EVM_REJECTED,
+            externalNetwork: BridgeNetworks.ETH_NETWORK_ID
           })
         }
       })
